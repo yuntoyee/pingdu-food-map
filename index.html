@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>发现平度美食</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://webapi.amap.com/maps?v=2.0&key=6715e30900a0a37aa0dccd9b09c6cd2a"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>发现平度美食</h1>
+      <p class="subtitle">本地人私藏的美味地图</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索店名 / 类别 / 地址…" />
+      </div>
+      <div class="filter-box">
+        <span class="filter-label">筛选：</span>
+        <div id="categoryTags" class="tag-list"></div>
+      </div>
+    </section>
+
+    <div class="content">
+      <section class="map-panel">
+        <div id="map" class="map"></div>
+      </section>
+
+      <section class="list-panel">
+        <div class="list-head">
+          <span id="countLabel">共 0 家店铺</span>
+        </div>
+        <ul id="foodList" class="food-list"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- 详情弹窗 -->
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-mask"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <h2 id="detailName"></h2>
+      <div class="detail-meta">
+        <span class="detail-category" id="detailCategory"></span>
+        <span class="detail-address" id="detailAddress"></span>
+      </div>
+      <p class="detail-desc" id="detailDesc"></p>
+      <div class="detail-actions">
+        <a id="detailMapLink" href="#" target="_blank" class="btn-map">在地图中打开</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>数据持续更新中 · 发现平度美食</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 编辑器 / IDE
+.codebuddy/
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# 可选：如果导出清单不想公开到线上，取消下面两行注释
+# 导出-平度美食地图清单.md
+# 导出-平度美食地图清单.csv

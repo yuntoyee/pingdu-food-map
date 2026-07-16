@@ -1,0 +1,5 @@
+[build]
+  # 纯静态站点，无需构建命令
+  command = ""
+  # 发布目录为项目根（index.html 所在目录）
+  publish = "."
