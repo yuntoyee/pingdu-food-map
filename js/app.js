@@ -1,4 +1,5 @@
-// 发现平度美食 —— 纯展示版前端
+// 平度美食探索 —— 房间式门户
+// 三个视图：房间首页 / 美食地图 / 扫街
 // 数据来自 data/foods.json，前端只读，编辑需改 JSON 文件
 
 const JSON_URL = "data/foods.json?t=" + Date.now();
@@ -8,6 +9,40 @@ let map = null;
 let markers = [];
 let activeId = null;
 let currentCategory = "全部";
+let mapInited = false;
+
+const VIEW_HOME = "viewHome";
+const VIEW_FOOD = "viewFood";
+const VIEW_STREET = "viewStreet";
+
+// ---------- 视图切换 ----------
+function showView(name) {
+  [VIEW_HOME, VIEW_FOOD, VIEW_STREET].forEach((v) => {
+    document.getElementById(v).classList.toggle("hidden", v !== name);
+  });
+
+  // 首次进入美食视图时再初始化地图（懒加载）
+  if (name === VIEW_FOOD && !mapInited) {
+    mapInited = true;
+    if (typeof AMap !== "undefined") {
+      initMap();
+    }
+  }
+
+  // 切换后让地图重新计算尺寸
+  if (name === VIEW_FOOD && map) {
+    setTimeout(() => map.resize?.(), 80);
+  }
+
+  window.scrollTo({ top: 0 });
+}
+
+function bindViewNav() {
+  document.getElementById("btnFood").addEventListener("click", () => showView(VIEW_FOOD));
+  document.getElementById("btnStreet").addEventListener("click", () => showView(VIEW_STREET));
+  document.getElementById("backHomeTop").addEventListener("click", () => showView(VIEW_HOME));
+  document.getElementById("backHomeBottom").addEventListener("click", () => showView(VIEW_HOME));
+}
 
 // ---------- 数据加载 ----------
 async function loadFoods() {
@@ -26,27 +61,24 @@ function initMap() {
   map = new AMap.Map("map", {
     zoom: 13,
     center: [119.965, 36.768],
-    mapStyle: "amap://styles/whitesmoke", // 浅色底图，类似截图风格
+    mapStyle: "amap://styles/whitesmoke",
   });
 
-  // 地图加载完成后渲染标记
   map.on("complete", () => {
     renderMarkers();
   });
 
-  // 缩放时根据级别刷新标签显示，避免缩小时文字重叠
   map.on("zoomend", () => {
     renderMarkers();
   });
 }
 
 function renderMarkers() {
-  // 清除旧标记
   markers.forEach((m) => map.remove(m));
   markers = [];
 
   const visible = getVisibleFoods();
-  const showLabel = map.getZoom() >= 14; // 缩小时隐藏文字，避免重叠
+  const showLabel = map.getZoom() >= 14;
 
   visible.forEach((f) => {
     if (f.lng == null || f.lat == null) return;
@@ -68,7 +100,6 @@ function renderMarkers() {
       }),
     });
 
-    // 悬停时显示名称气泡
     const tip = new AMap.Marker({
       position: [f.lng, f.lat],
       content: `<div class="map-tip">${f.name}</div>`,
@@ -76,7 +107,7 @@ function renderMarkers() {
       zIndex: 200,
       bubble: true,
     });
-    tip.setMap(null); // 默认隐藏
+    tip.setMap(null);
 
     marker.on("mouseover", () => tip.setMap(map));
     marker.on("mouseout", () => tip.setMap(null));
@@ -111,7 +142,7 @@ function getCategories() {
 // ---------- 渲染 ----------
 function render() {
   renderList();
-  renderMarkers();
+  if (map && mapInited) renderMarkers();
   renderCategoryTags();
 }
 
@@ -177,7 +208,6 @@ function selectFood(id) {
   activeId = id;
   renderList();
 
-  // 高亮地图标记
   markers.forEach((m) => {
     const isActive = m.foodId === id;
     m.setIcon(
@@ -226,7 +256,7 @@ function bindEvents() {
 // ---------- 启动 ----------
 (async function init() {
   await loadFoods();
-  initMap();
+  bindViewNav();
   bindEvents();
   render();
 })();
