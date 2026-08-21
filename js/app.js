@@ -47,13 +47,20 @@ function bindViewNav() {
 // ---------- 数据加载 ----------
 async function loadFoods() {
   try {
-    const res = await fetch(JSON_URL);
+    const res = await fetch(JSON_URL, { cache: "no-store" });
     if (!res.ok) throw new Error("加载失败");
     foods = await res.json();
   } catch (e) {
     console.error("无法加载 foods.json：", e);
     foods = [];
   }
+}
+
+function showDataError() {
+  const list = document.getElementById("foodList");
+  if (!list) return;
+  list.innerHTML = '<div class="empty">美食数据加载失败，请刷新页面重试 🥲</div>';
+  document.getElementById("countLabel").textContent = "共 0 家店铺";
 }
 
 // ---------- 高德地图 ----------
@@ -258,5 +265,10 @@ function bindEvents() {
   await loadFoods();
   bindViewNav();
   bindEvents();
-  render();
+
+  if (!foods.length) {
+    showDataError();
+  } else {
+    render();
+  }
 })();
