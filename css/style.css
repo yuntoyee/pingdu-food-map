@@ -492,6 +492,18 @@ body {
   padding: 28px 16px;
 }
 
+.footer-beian {
+  margin-top: 6px;
+}
+.footer-beian a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.footer-beian a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 /* Scrollbar */
 .food-list::-webkit-scrollbar { width: 6px; }
 .food-list::-webkit-scrollbar-track { background: transparent; }
