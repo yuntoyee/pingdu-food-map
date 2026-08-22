@@ -10,7 +10,6 @@
   {"name": "傣劲米线", "address": "平度市人民路87-5-1号", "category": "米线", "desc": "人民路"},
   {"name": "老生资馄饨", "address": "平度市经济开发区", "category": "馄饨", "desc": "生资公司对面"},
   {"name": "如心意脂渣", "address": "平度市福州南路29-1号", "category": "特产", "desc": "福州南路"},
-  {"name": "小马哥爆肚", "address": "平度市李园街道办事处徐州路24-6", "category": "小吃", "desc": "李园街道"},
   {"name": "胶东名城", "address": "平度市李园街道人民路108-1号", "category": "鲁菜", "desc": "李园街道人民路"},
   {"name": "同和老牛汤", "address": "平度市崔侯路140号", "category": "汤品", "desc": "同和"},
   {"name": "现河串串", "address": "平度市人民路71-8号", "category": "串串", "desc": "人民路现河"},
@@ -34,5 +33,7 @@
   {"name": "肉夹馍土豆粉(福安花苑南区店)", "address": "平度市南京东路38-2", "category": "面食", "desc": "福安花苑南区"},
   {"name": "老崔辣子鸡", "address": "平度市胜利新村8排8号", "category": "鲁菜", "desc": "胜利新村"},
   {"name": "顺吉饭店", "address": "平度市福州路2-17号", "category": "鲁菜", "desc": "福州路"},
-  {"name": "东北菜馆(新华苑店)", "address": "平度市常州路255-3号", "category": "东北菜", "desc": "人民医院常州路门诊部对面"}
+  {"name": "东北菜馆(新华苑店)", "address": "平度市常州路255-3号", "category": "东北菜", "desc": "人民医院常州路门诊部对面"},
+  {"name": "聚元鲜骨汤馄饨", "address": "平度市福州路", "category": "粉面", "desc": ""},
+  {"name": "毛桃炒酸奶", "address": "平度市", "category": "甜品", "desc": ""}
 ]
