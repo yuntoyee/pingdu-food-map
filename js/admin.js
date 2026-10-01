@@ -5,12 +5,13 @@ const SUPABASE_URL = "https://pxheapromvigpggfeslz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_8sMLifYG6cnCxg2pJi_hyw_4M9o0dlF";
 const MAX_VIDEO_MB = 50;
 const MAX_IMAGE_MB = 10;
+const MAX_IMAGES = 9;
 
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let pendingAudio = null; // { file, label }
 let pendingVideo = null; // { file, label }
-let pendingImage = null; // { file, label }
+let pendingImages = []; // [{ file, label }]
 let publishing = false;
 
 // ---------- 工具 ----------
@@ -36,6 +37,27 @@ function urlToStoragePath(url) {
   // https://xxx.supabase.co/storage/v1/object/public/media/<path> → <path>
   const m = String(url).match(/\/storage\/v1\/object\/public\/media\/(.+)$/);
   return m ? decodeURIComponent(m[1]) : null;
+}
+
+// 合并新旧字段，返回一条动态的所有图片 URL
+function imagesOf(p) {
+  const urls = [];
+  if (p.image_url) urls.push(p.image_url);
+  if (Array.isArray(p.images)) urls.push(...p.images);
+  return urls;
+}
+
+// 图片九宫格 HTML
+function imagesHtml(urls) {
+  if (!urls.length) return "";
+  if (urls.length === 1) {
+    const u = escapeHtml(urls[0]);
+    return `<a href="${u}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${u}" alt="动态图片" /></a>`;
+  }
+  const items = urls
+    .map((u) => `<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${escapeHtml(u)}" alt="动态图片" /></a>`)
+    .join("");
+  return `<div class="post-images">${items}</div>`;
 }
 
 // ---------- 登录态 ----------
@@ -81,7 +103,7 @@ async function doLogout() {
   document.getElementById("feedText").value = "";
   pendingAudio = null;
   pendingVideo = null;
-  pendingImage = null;
+  pendingImages = [];
   renderComposerPreview();
   await checkSession();
 }
@@ -121,13 +143,11 @@ function renderAdminFeed(posts) {
     if (p.video_url) {
       media.push(`<video class="post-video" controls playsinline preload="metadata" src="${escapeHtml(p.video_url)}"></video>`);
     }
-    if (p.image_url) {
-      media.push(`<a href="${escapeHtml(p.image_url)}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${escapeHtml(p.image_url)}" alt="动态图片" /></a>`);
-    }
+    media.push(imagesHtml(imagesOf(p)));
     card.innerHTML = `
       <div class="post-head">
         <div class="post-date">${fmtDate(p.created_at)}</div>
-        <button class="post-del" data-id="${p.id}" data-audio="${escapeHtml(p.audio_url || "")}" data-video="${escapeHtml(p.video_url || "")}" data-image="${escapeHtml(p.image_url || "")}" type="button">删除</button>
+        <button class="post-del" data-id="${p.id}" data-audio="${escapeHtml(p.audio_url || "")}" data-video="${escapeHtml(p.video_url || "")}" data-images="${escapeHtml(JSON.stringify(imagesOf(p)))}" type="button">删除</button>
       </div>
       ${p.content ? `<div class="post-content">${escapeHtml(p.content)}</div>` : ""}
       ${media.join("")}`;
@@ -141,7 +161,9 @@ async function deletePost(btn) {
   btn.disabled = true;
   try {
     // 先删关联媒体文件
-    for (const url of [btn.dataset.audio, btn.dataset.video, btn.dataset.image]) {
+    let imgUrls = [];
+    try { imgUrls = JSON.parse(btn.dataset.images || "[]"); } catch (e) {}
+    for (const url of [btn.dataset.audio, btn.dataset.video, ...imgUrls]) {
       const path = urlToStoragePath(url);
       if (path) {
         await sb.storage.from("media").remove([path]);
@@ -167,9 +189,9 @@ function renderComposerPreview() {
   if (pendingVideo) {
     parts.push(`<span class="pv-item">${escapeHtml(pendingVideo.label)}<button type="button" class="pv-remove" data-remove="video">&times;</button></span>`);
   }
-  if (pendingImage) {
-    parts.push(`<span class="pv-item">${escapeHtml(pendingImage.label)}<button type="button" class="pv-remove" data-remove="image">&times;</button></span>`);
-  }
+  pendingImages.forEach((img, i) => {
+    parts.push(`<span class="pv-item pv-thumb"><img src="${escapeHtml(img.url)}" alt="" /><button type="button" class="pv-remove" data-remove="image" data-index="${i}">&times;</button></span>`);
+  });
   pv.innerHTML = parts.join("");
   pv.classList.toggle("hidden", parts.length === 0);
 }
@@ -187,7 +209,7 @@ async function uploadMedia(file) {
 async function doPublish() {
   if (publishing) return;
   const content = document.getElementById("feedText").value.trim();
-  if (!content && !pendingAudio && !pendingVideo && !pendingImage) {
+  if (!content && !pendingAudio && !pendingVideo && !pendingImages.length) {
     alert("写点文字或添加语音 / 图片 / 视频再发布吧");
     return;
   }
@@ -198,18 +220,20 @@ async function doPublish() {
   try {
     let audio_url = null;
     let video_url = null;
-    let image_url = null;
+    const images = [];
     if (pendingAudio) audio_url = await uploadMedia(pendingAudio.file);
     if (pendingVideo) video_url = await uploadMedia(pendingVideo.file);
-    if (pendingImage) image_url = await uploadMedia(pendingImage.file);
+    for (const img of pendingImages) {
+      images.push(await uploadMedia(img.file));
+    }
     const { error } = await sb
       .from("posts")
-      .insert({ content, audio_url, video_url, image_url });
+      .insert({ content, audio_url, video_url, images });
     if (error) throw error;
     document.getElementById("feedText").value = "";
     pendingAudio = null;
     pendingVideo = null;
-    pendingImage = null;
+    pendingImages = [];
     renderComposerPreview();
     await loadAdminFeed();
     window.scrollTo({ top: 0 });
@@ -260,20 +284,24 @@ function bindEvents() {
     }
     e.target.value = "";
   });
-  // 图片
+  // 图片（可多选）
   document.getElementById("btnImage").addEventListener("click", () => {
     document.getElementById("imageFile").click();
   });
   document.getElementById("imageFile").addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-        alert(`图片不能超过 ${MAX_IMAGE_MB}MB，请压缩后再上传`);
-      } else {
-        pendingImage = { file, label: file.name };
-        renderComposerPreview();
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (pendingImages.length >= MAX_IMAGES) {
+        alert(`最多上传 ${MAX_IMAGES} 张图片`);
+        break;
       }
+      if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+        alert(`「${file.name}」超过 ${MAX_IMAGE_MB}MB，已跳过，请压缩后再上传`);
+        continue;
+      }
+      pendingImages.push({ file, label: file.name, url: URL.createObjectURL(file) });
     }
+    renderComposerPreview();
     e.target.value = "";
   });
   // 移除待发布媒体
@@ -282,7 +310,10 @@ function bindEvents() {
     if (!btn) return;
     if (btn.dataset.remove === "audio") pendingAudio = null;
     if (btn.dataset.remove === "video") pendingVideo = null;
-    if (btn.dataset.remove === "image") pendingImage = null;
+    if (btn.dataset.remove === "image") {
+      const i = Number(btn.dataset.index);
+      pendingImages.splice(i, 1);
+    }
     renderComposerPreview();
   });
   // 发布

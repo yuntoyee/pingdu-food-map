@@ -295,6 +295,27 @@ async function loadFeed() {
   }
 }
 
+// 合并新旧字段，返回一条动态的所有图片 URL
+function imagesOf(p) {
+  const urls = [];
+  if (p.image_url) urls.push(p.image_url);
+  if (Array.isArray(p.images)) urls.push(...p.images);
+  return urls;
+}
+
+// 图片九宫格 HTML：单张全宽，多张网格
+function imagesHtml(urls) {
+  if (!urls.length) return "";
+  if (urls.length === 1) {
+    const u = escapeHtml(urls[0]);
+    return `<a href="${u}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${u}" alt="动态图片" /></a>`;
+  }
+  const items = urls
+    .map((u) => `<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${escapeHtml(u)}" alt="动态图片" /></a>`)
+    .join("");
+  return `<div class="post-images">${items}</div>`;
+}
+
 function renderFeed(posts) {
   const list = document.getElementById("feedList");
   if (!posts.length) {
@@ -312,9 +333,7 @@ function renderFeed(posts) {
     if (p.video_url) {
       media.push(`<video class="post-video" controls playsinline preload="metadata" src="${escapeHtml(p.video_url)}"></video>`);
     }
-    if (p.image_url) {
-      media.push(`<a href="${escapeHtml(p.image_url)}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${escapeHtml(p.image_url)}" alt="动态图片" /></a>`);
-    }
+    media.push(imagesHtml(imagesOf(p)));
     card.innerHTML = `
       <div class="post-date">${fmtDate(p.created_at)}</div>
       ${p.content ? `<div class="post-content">${escapeHtml(p.content)}</div>` : ""}
