@@ -6,6 +6,7 @@
   <title>in平度</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://webapi.amap.com/maps?v=2.0&key=6715e30900a0a37aa0dccd9b09c6cd2a"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -20,11 +21,11 @@
           <span class="px-knob"></span>
           <span class="px-label">美食</span>
         </button>
-        <button class="px-door" id="btnStreet" type="button">
+        <button class="px-door" id="btnFeed" type="button">
           <span class="px-frame"></span>
           <span class="px-panel"></span>
           <span class="px-knob"></span>
-          <span class="px-label">扫街</span>
+          <span class="px-label">动态</span>
         </button>
       </div>
     </div>
@@ -83,28 +84,20 @@
     </div>
   </section>
 
-  <!-- ============ 视图三：扫街 ============ -->
-  <section id="viewStreet" class="view view-street hidden">
+  <!-- ============ 视图三：动态 ============ -->
+  <section id="viewFeed" class="view view-feed hidden">
     <header class="site-header">
       <div class="header-inner">
         <button class="back-btn" id="backHomeBottom" type="button">‹ 返回房间</button>
-        <p class="site-sub">in平度 · 平度扫街正在筹备中</p>
+        <h1 class="site-title">我的动态</h1>
+        <p class="site-sub">in平度 · 记录最新动态</p>
       </div>
     </header>
 
     <main class="container">
-      <div class="street-gallery">
-        <div class="street-empty">
-          <span class="street-empty-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="7" width="18" height="13" rx="2.5"/>
-              <circle cx="12" cy="13.5" r="3.5"/>
-              <path d="M8.5 7l1.2-2h4.6l1.2 2"/>
-            </svg>
-          </span>
-          <h2>扫街频道 · 筹备中</h2>
-          <span class="street-tag">平度 · 街头 · 生活</span>
-        </div>
+      <div class="feed-wrap">
+        <!-- 动态列表 -->
+        <div id="feedList" class="feed-list"></div>
       </div>
     </main>
   </section>

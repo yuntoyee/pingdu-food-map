@@ -1,6 +1,6 @@
 // 平度美食探索 —— 房间式门户
-// 三个视图：房间首页 / 美食地图 / 扫街
-// 数据来自 data/foods.json，前端只读，编辑需改 JSON 文件
+// 三个视图：房间首页 / 美食地图 / 我的动态
+// 美食数据来自 data/foods.json；动态数据存 Supabase
 
 const JSON_URL = "data/foods.json?t=" + Date.now();
 
@@ -13,11 +13,11 @@ let mapInited = false;
 
 const VIEW_HOME = "viewHome";
 const VIEW_FOOD = "viewFood";
-const VIEW_STREET = "viewStreet";
+const VIEW_FEED = "viewFeed";
 
 // ---------- 视图切换 ----------
 function showView(name) {
-  [VIEW_HOME, VIEW_FOOD, VIEW_STREET].forEach((v) => {
+  [VIEW_HOME, VIEW_FOOD, VIEW_FEED].forEach((v) => {
     document.getElementById(v).classList.toggle("hidden", v !== name);
   });
 
@@ -34,12 +34,17 @@ function showView(name) {
     setTimeout(() => map.resize?.(), 80);
   }
 
+  // 进入动态视图时刷新动态
+  if (name === VIEW_FEED) {
+    loadFeed();
+  }
+
   window.scrollTo({ top: 0 });
 }
 
 function bindViewNav() {
   document.getElementById("btnFood").addEventListener("click", () => showView(VIEW_FOOD));
-  document.getElementById("btnStreet").addEventListener("click", () => showView(VIEW_STREET));
+  document.getElementById("btnFeed").addEventListener("click", () => showView(VIEW_FEED));
   document.getElementById("backHomeTop").addEventListener("click", () => showView(VIEW_HOME));
   document.getElementById("backHomeBottom").addEventListener("click", () => showView(VIEW_HOME));
 }
@@ -258,6 +263,71 @@ function bindEvents() {
   });
   document.getElementById("modalClose").addEventListener("click", closeDetail);
   document.querySelector(".modal-mask").addEventListener("click", closeDetail);
+}
+
+// ================================================================
+// 我的动态（Supabase，只读浏览；发布管理在独立管理页）
+// ================================================================
+const SUPABASE_URL = "https://pxheapromvigpggfeslz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_8sMLifYG6cnCxg2pJi_hyw_4M9o0dlF";
+
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ---------- 加载与渲染 ----------
+async function loadFeed() {
+  const list = document.getElementById("feedList");
+  if (!sb) {
+    list.innerHTML = '<div class="feed-empty">动态服务加载失败，请刷新页面重试</div>';
+    return;
+  }
+  list.innerHTML = '<div class="feed-empty">加载中…</div>';
+  try {
+    const { data, error } = await sb
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    renderFeed(data || []);
+  } catch (e) {
+    console.error("动态加载失败：", e);
+    list.innerHTML = '<div class="feed-empty">动态加载失败，请刷新页面重试</div>';
+  }
+}
+
+function renderFeed(posts) {
+  const list = document.getElementById("feedList");
+  if (!posts.length) {
+    list.innerHTML = '<div class="feed-empty">还没有动态</div>';
+    return;
+  }
+  list.innerHTML = "";
+  posts.forEach((p) => {
+    const card = document.createElement("div");
+    card.className = "post-card";
+    const media = [];
+    if (p.audio_url) {
+      media.push(`<audio class="post-audio" controls preload="metadata" src="${escapeHtml(p.audio_url)}"></audio>`);
+    }
+    if (p.video_url) {
+      media.push(`<video class="post-video" controls playsinline preload="metadata" src="${escapeHtml(p.video_url)}"></video>`);
+    }
+    card.innerHTML = `
+      <div class="post-date">${fmtDate(p.created_at)}</div>
+      ${p.content ? `<div class="post-content">${escapeHtml(p.content)}</div>` : ""}
+      ${media.join("")}`;
+    list.appendChild(card);
+  });
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}-${dd} ${hh}:${mi}`;
 }
 
 // ---------- 启动 ----------
