@@ -493,12 +493,6 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
-.tool-btn.recording {
-  border-color: #e63946;
-  color: #e63946;
-  animation: recBlink 1s steps(2) infinite;
-}
-@keyframes recBlink { 50% { opacity: 0.45; } }
 .publish-btn {
   margin-left: auto;
   background: var(--accent);
@@ -582,6 +576,15 @@ body {
   max-height: 420px;
   background: #000000;
   border: 1px solid var(--border);
+}
+.post-image {
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  image-rendering: auto;
 }
 
 /* --- 密码弹窗 --- */

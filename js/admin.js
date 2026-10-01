@@ -1,19 +1,16 @@
-// 动态管理页 —— 登录、发布（文字/语音/视频）、删除动态
+// 动态管理页 —— 登录、发布（文字/语音/图片/视频）、删除动态
 // 该页面不被站点任何位置链接，仅管理员知晓地址
 
 const SUPABASE_URL = "https://pxheapromvigpggfeslz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_8sMLifYG6cnCxg2pJi_hyw_4M9o0dlF";
 const MAX_VIDEO_MB = 50;
+const MAX_IMAGE_MB = 10;
 
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let pendingAudio = null; // { file, label }
 let pendingVideo = null; // { file, label }
-let mediaRecorder = null;
-let audioChunks = [];
-let recording = false;
-let recTimer = null;
-let recSeconds = 0;
+let pendingImage = null; // { file, label }
 let publishing = false;
 
 // ---------- 工具 ----------
@@ -33,11 +30,6 @@ function fmtDate(iso) {
   const hh = String(d.getHours()).padStart(2, "0");
   const mi = String(d.getMinutes()).padStart(2, "0");
   return `${mm}-${dd} ${hh}:${mi}`;
-}
-
-function fmtDur(sec) {
-  sec = Math.round(sec || 0);
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 
 function urlToStoragePath(url) {
@@ -89,6 +81,7 @@ async function doLogout() {
   document.getElementById("feedText").value = "";
   pendingAudio = null;
   pendingVideo = null;
+  pendingImage = null;
   renderComposerPreview();
   await checkSession();
 }
@@ -128,10 +121,13 @@ function renderAdminFeed(posts) {
     if (p.video_url) {
       media.push(`<video class="post-video" controls playsinline preload="metadata" src="${escapeHtml(p.video_url)}"></video>`);
     }
+    if (p.image_url) {
+      media.push(`<a href="${escapeHtml(p.image_url)}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${escapeHtml(p.image_url)}" alt="动态图片" /></a>`);
+    }
     card.innerHTML = `
       <div class="post-head">
         <div class="post-date">${fmtDate(p.created_at)}</div>
-        <button class="post-del" data-id="${p.id}" data-audio="${escapeHtml(p.audio_url || "")}" data-video="${escapeHtml(p.video_url || "")}" type="button">删除</button>
+        <button class="post-del" data-id="${p.id}" data-audio="${escapeHtml(p.audio_url || "")}" data-video="${escapeHtml(p.video_url || "")}" data-image="${escapeHtml(p.image_url || "")}" type="button">删除</button>
       </div>
       ${p.content ? `<div class="post-content">${escapeHtml(p.content)}</div>` : ""}
       ${media.join("")}`;
@@ -145,7 +141,7 @@ async function deletePost(btn) {
   btn.disabled = true;
   try {
     // 先删关联媒体文件
-    for (const url of [btn.dataset.audio, btn.dataset.video]) {
+    for (const url of [btn.dataset.audio, btn.dataset.video, btn.dataset.image]) {
       const path = urlToStoragePath(url);
       if (path) {
         await sb.storage.from("media").remove([path]);
@@ -161,75 +157,6 @@ async function deletePost(btn) {
   }
 }
 
-// ---------- 录音 ----------
-async function toggleRecording() {
-  if (recording) {
-    stopRecording();
-    return;
-  }
-  if (!navigator.mediaDevices || !window.MediaRecorder) {
-    document.getElementById("audioFile").click();
-    return;
-  }
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (e) {
-    alert("无法访问麦克风，可选择本地音频文件上传");
-    document.getElementById("audioFile").click();
-    return;
-  }
-  audioChunks = [];
-  mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size) audioChunks.push(e.data);
-  };
-  mediaRecorder.onstop = onRecStop;
-  mediaRecorder.start();
-  recording = true;
-  recSeconds = 0;
-  setRecBtn(true);
-  recTimer = setInterval(() => {
-    recSeconds++;
-    setRecBtn(true);
-    if (recSeconds >= 60) stopRecording(); // 最长 60 秒
-  }, 1000);
-}
-
-function setRecBtn(on) {
-  const t = document.getElementById("btnAudioText");
-  const btn = document.getElementById("btnAudio");
-  if (on) {
-    btn.classList.add("recording");
-    t.textContent = `结束 ${fmtDur(recSeconds)}`;
-  } else {
-    btn.classList.remove("recording");
-    t.textContent = "语音";
-  }
-}
-
-function stopRecording() {
-  if (!recording) return;
-  recording = false;
-  clearInterval(recTimer);
-  setRecBtn(false);
-  const rec = mediaRecorder;
-  try { rec && rec.state !== "inactive" && rec.stop(); } catch (e) {}
-  if (rec && rec.stream) {
-    rec.stream.getTracks().forEach((t) => t.stop());
-  }
-}
-
-function onRecStop() {
-  const type = mediaRecorder.mimeType || "audio/webm";
-  const blob = new Blob(audioChunks, { type });
-  if (!blob.size) return;
-  const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
-  const file = new File([blob], `audio_${Date.now()}.${ext}`, { type });
-  pendingAudio = { file, label: `语音 ${fmtDur(recSeconds)}` };
-  renderComposerPreview();
-}
-
 // ---------- 待发布媒体 ----------
 function renderComposerPreview() {
   const pv = document.getElementById("composerPreview");
@@ -239,6 +166,9 @@ function renderComposerPreview() {
   }
   if (pendingVideo) {
     parts.push(`<span class="pv-item">${escapeHtml(pendingVideo.label)}<button type="button" class="pv-remove" data-remove="video">&times;</button></span>`);
+  }
+  if (pendingImage) {
+    parts.push(`<span class="pv-item">${escapeHtml(pendingImage.label)}<button type="button" class="pv-remove" data-remove="image">&times;</button></span>`);
   }
   pv.innerHTML = parts.join("");
   pv.classList.toggle("hidden", parts.length === 0);
@@ -257,8 +187,8 @@ async function uploadMedia(file) {
 async function doPublish() {
   if (publishing) return;
   const content = document.getElementById("feedText").value.trim();
-  if (!content && !pendingAudio && !pendingVideo) {
-    alert("写点文字或添加语音 / 视频再发布吧");
+  if (!content && !pendingAudio && !pendingVideo && !pendingImage) {
+    alert("写点文字或添加语音 / 图片 / 视频再发布吧");
     return;
   }
   publishing = true;
@@ -268,15 +198,18 @@ async function doPublish() {
   try {
     let audio_url = null;
     let video_url = null;
+    let image_url = null;
     if (pendingAudio) audio_url = await uploadMedia(pendingAudio.file);
     if (pendingVideo) video_url = await uploadMedia(pendingVideo.file);
+    if (pendingImage) image_url = await uploadMedia(pendingImage.file);
     const { error } = await sb
       .from("posts")
-      .insert({ content, audio_url, video_url });
+      .insert({ content, audio_url, video_url, image_url });
     if (error) throw error;
     document.getElementById("feedText").value = "";
     pendingAudio = null;
     pendingVideo = null;
+    pendingImage = null;
     renderComposerPreview();
     await loadAdminFeed();
     window.scrollTo({ top: 0 });
@@ -299,8 +232,10 @@ function bindEvents() {
   });
   // 退出
   document.getElementById("btnLogout").addEventListener("click", doLogout);
-  // 录音 / 选音频文件
-  document.getElementById("btnAudio").addEventListener("click", toggleRecording);
+  // 选本地音频文件
+  document.getElementById("btnAudio").addEventListener("click", () => {
+    document.getElementById("audioFile").click();
+  });
   document.getElementById("audioFile").addEventListener("change", (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
@@ -325,12 +260,29 @@ function bindEvents() {
     }
     e.target.value = "";
   });
+  // 图片
+  document.getElementById("btnImage").addEventListener("click", () => {
+    document.getElementById("imageFile").click();
+  });
+  document.getElementById("imageFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+        alert(`图片不能超过 ${MAX_IMAGE_MB}MB，请压缩后再上传`);
+      } else {
+        pendingImage = { file, label: file.name };
+        renderComposerPreview();
+      }
+    }
+    e.target.value = "";
+  });
   // 移除待发布媒体
   document.getElementById("composerPreview").addEventListener("click", (e) => {
     const btn = e.target.closest(".pv-remove");
     if (!btn) return;
     if (btn.dataset.remove === "audio") pendingAudio = null;
     if (btn.dataset.remove === "video") pendingVideo = null;
+    if (btn.dataset.remove === "image") pendingImage = null;
     renderComposerPreview();
   });
   // 发布

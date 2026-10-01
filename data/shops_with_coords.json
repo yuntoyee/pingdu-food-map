@@ -208,5 +208,17 @@
     "address": "平度市",
     "category": "甜品",
     "desc": ""
+  },
+  {
+    "name": "聚月圆火锅",
+    "address": "平度市",
+    "category": "火锅",
+    "desc": ""
+  },
+  {
+    "name": "梧桐小院",
+    "address": "平度市",
+    "category": "炒菜",
+    "desc": ""
   }
 ]

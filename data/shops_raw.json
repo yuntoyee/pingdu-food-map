@@ -33,5 +33,7 @@
   {"name": "顺吉饭店", "address": "平度市福州路2-17号", "category": "鲁菜", "desc": "福州路"},
   {"name": "东北菜馆(新华苑店)", "address": "平度市常州路255-3号", "category": "东北菜", "desc": "人民医院常州路门诊部对面"},
   {"name": "聚元鲜骨汤馄饨", "address": "平度市福州路", "category": "粉面", "desc": ""},
-  {"name": "毛桃炒酸奶", "address": "平度市", "category": "甜品", "desc": ""}
+  {"name": "毛桃炒酸奶", "address": "平度市", "category": "甜品", "desc": ""},
+  {"name": "聚月圆火锅", "address": "平度市", "category": "火锅", "desc": ""},
+  {"name": "梧桐小院", "address": "平度市", "category": "炒菜", "desc": ""}
 ]

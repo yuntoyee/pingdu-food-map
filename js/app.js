@@ -312,6 +312,9 @@ function renderFeed(posts) {
     if (p.video_url) {
       media.push(`<video class="post-video" controls playsinline preload="metadata" src="${escapeHtml(p.video_url)}"></video>`);
     }
+    if (p.image_url) {
+      media.push(`<a href="${escapeHtml(p.image_url)}" target="_blank" rel="noopener noreferrer"><img class="post-image" loading="lazy" src="${escapeHtml(p.image_url)}" alt="动态图片" /></a>`);
+    }
     card.innerHTML = `
       <div class="post-date">${fmtDate(p.created_at)}</div>
       ${p.content ? `<div class="post-content">${escapeHtml(p.content)}</div>` : ""}
