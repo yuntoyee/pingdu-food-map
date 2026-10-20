@@ -6,36 +6,13 @@
   <title>in平度</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://webapi.amap.com/maps?v=2.0&key=6715e30900a0a37aa0dccd9b09c6cd2a"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- ============ 视图一：首页（两扇门） ============ -->
-  <section id="viewHome" class="view view-home">
-    <div class="pixel-room">
-      <!-- 像素门 -->
-      <div class="pixel-doors">
-        <button class="px-door" id="btnFood" type="button">
-          <span class="px-frame"></span>
-          <span class="px-panel"></span>
-          <span class="px-knob"></span>
-          <span class="px-label">美食</span>
-        </button>
-        <button class="px-door" id="btnFeed" type="button">
-          <span class="px-frame"></span>
-          <span class="px-panel"></span>
-          <span class="px-knob"></span>
-          <span class="px-label">动态</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 视图二：美食地图 ============ -->
-  <section id="viewFood" class="view view-food hidden">
+  <!-- ============ 美食地图 ============ -->
+  <section id="viewFood" class="view view-food">
     <header class="site-header">
       <div class="header-inner">
-        <button class="back-btn" id="backHomeTop" type="button">‹ 返回房间</button>
         <h1 class="site-title">美食地图</h1>
         <p class="site-sub">in平度 · 本地人私藏的美味地图</p>
       </div>
@@ -82,24 +59,6 @@
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- ============ 视图三：动态 ============ -->
-  <section id="viewFeed" class="view view-feed hidden">
-    <header class="site-header">
-      <div class="header-inner">
-        <button class="back-btn" id="backHomeBottom" type="button">‹ 返回房间</button>
-        <h1 class="site-title">我的动态</h1>
-        <p class="site-sub">in平度 · 记录最新动态</p>
-      </div>
-    </header>
-
-    <main class="container">
-      <div class="feed-wrap">
-        <!-- 动态列表 -->
-        <div id="feedList" class="feed-list"></div>
-      </div>
-    </main>
   </section>
 
   <footer class="site-footer">
